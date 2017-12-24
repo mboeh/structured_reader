@@ -203,6 +203,18 @@ module StructuredReader
 
     end
 
+    class RawReader
+
+      def initialize(**_)
+
+      end
+
+      def read(fragment, context)
+        context.accept fragment
+      end
+
+    end
+
     class OneOfReader
 
       class ReaderBuilder
@@ -303,6 +315,7 @@ module StructuredReader
         number: NumberReader,
         one_of: OneOfReader,
         null: NullReader,
+        raw: RawReader,
       }
 
       def reader(type, *args, **kwargs, &blk)

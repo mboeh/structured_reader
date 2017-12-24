@@ -126,6 +126,19 @@ RSpec.describe StructuredReader do
 
     end
 
+    context "reading a raw value" do
+
+      it "returns the literal, unmodified value" do
+        object = { raw: [ { yep: 1 }, { what_of_it: ["woot"] }, true ] }
+        result = reader do |o|
+          o.raw :raw
+        end.read(object)
+
+        expect(result.raw).to eq(object[:raw])
+      end
+
+    end
+
     context "reading any_of" do
 
       it "raises an exception if no options are provided" do
