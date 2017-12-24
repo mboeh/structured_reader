@@ -7,8 +7,8 @@ RSpec.describe StructuredReader do
 
   context ".json" do
 
-    def reader(&blk)
-      StructuredReader.json(&blk)
+    def reader(*args, &blk)
+      StructuredReader.json(*args, &blk)
     end
 
     it "raises an exception if the declaration is empty" do
@@ -296,6 +296,55 @@ RSpec.describe StructuredReader do
         expect(result.shapes[1].width).to eq(5)
         expect(result.shapes[2].diameter).to eq(4)
       end
+
+    end
+
+    context "defining new reader types" do
+
+      it "can define a custom reader" do
+        reader_set = StructuredReader.reader_set do |r|
+          r.custom :score do |fragment, context|
+            if fragment.kind_of?(Numeric) && (1..10).member?(fragment)
+              context.accept(fragment)
+            else
+              context.flunk(fragment, "must be a number from 1 to 10")
+            end
+          end
+        end
+
+        rdr = reader(reader_set: reader_set) do |o|
+          o.score :rank
+        end
+
+        result = rdr.read({ rank: 9 })
+        expect(result.rank).to eq(9)
+      end
+
+      it "can define an object alias" do
+        reader_set = StructuredReader.reader_set do |r|
+          r.object :package_dimensions do |o|
+            o.number :width
+            o.number :height
+            o.number :depth
+            o.number :weight
+          end
+        end
+
+        rdr = reader(reader_set: reader_set) do |o|
+          o.package_dimensions :dims
+        end
+
+        result = rdr.read({
+          dims: {
+            width: 5,
+            height: 4,
+            depth: 4,
+            weight: 20,
+          }
+        })
+        expect(result.dims.weight).to eq(20)
+      end
+
 
     end
 

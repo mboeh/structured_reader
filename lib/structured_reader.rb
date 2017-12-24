@@ -9,8 +9,12 @@ module StructuredReader
   WrongTypeError = Class.new(Error)
   DeclarationError = Class.new(Error)
 
-  def self.json(&blk)
-    JSONReader.new(&blk)
+  def self.json(*args, &blk)
+    JSONReader.new(*args, &blk)
+  end
+
+  def self.reader_set(&blk)
+    JSONReader::ReaderSet.new.tap(&blk)
   end
 
   class JSONReader
@@ -293,6 +297,19 @@ module StructuredReader
 
     end
 
+    class BuilderDeriver
+
+      def initialize(klass, &blk)
+        @klass = klass
+        @build_action = blk
+      end
+
+      def new(*args, **kwargs)
+        @klass.new(*args, **kwargs, &@build_action)
+      end
+
+    end
+
     class Context
 
       def initialize(where = "")
@@ -390,6 +407,14 @@ module StructuredReader
 
       def add_reader(type, reader)
         @readers[type.to_sym] = reader
+      end
+
+      def custom(type, &blk)
+        add_reader type, BuilderDeriver.new(CustomReader, &blk)
+      end
+
+      def object(type, &blk)
+        add_reader type, BuilderDeriver.new(ObjectReader, &blk)
       end
 
       def reader(type, *args, **kwargs, &blk)
