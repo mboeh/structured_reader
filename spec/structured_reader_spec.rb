@@ -139,6 +139,29 @@ RSpec.describe StructuredReader do
 
     end
 
+    context "reading a literal value" do
+
+      it "returns the literal, unmodified value if it matches the provided value" do
+        object = { lit: "yes" }
+        result = reader do |o|
+          o.literal :lit, value: "yes"
+        end.read(object)
+
+        expect(result.lit).to eq("yes")
+      end
+
+      it "rejects any other value" do
+        object = { lit: "no" }
+
+        expect{
+          reader do |o|
+            o.literal :lit, value: "yes"
+          end.read(object)
+        }.to raise_error(StructuredReader::WrongTypeError)
+      end
+
+    end
+
     context "reading any_of" do
 
       it "raises an exception if no options are provided" do

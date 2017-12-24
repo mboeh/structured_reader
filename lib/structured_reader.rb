@@ -187,18 +187,26 @@ module StructuredReader
 
     end
 
-    class NullReader
+    class LiteralReader
 
-      def initialize(**_)
-
+      def initialize(value:)
+        @value = value
       end
 
       def read(fragment, context)
-        if fragment.nil?
-          context.accept nil
+        if fragment == @value
+          context.accept fragment
         else
-          context.flunk(fragment, "expected nil")
+          context.flunk(fragment, "expected #{@value.inspect}")
         end
+      end
+
+    end
+
+    class NullReader < LiteralReader
+
+      def initialize(**_)
+        super value: nil
       end
 
     end
@@ -316,6 +324,7 @@ module StructuredReader
         one_of: OneOfReader,
         null: NullReader,
         raw: RawReader,
+        literal: LiteralReader,
       }
 
       def reader(type, *args, **kwargs, &blk)
