@@ -206,5 +206,56 @@ RSpec.describe StructuredReader do
 
     end
 
+    context "reading a discriminated union" do
+
+      it "works" do
+        object = {
+          shapes: [
+            {
+              type: "square",
+              length: 10,
+            },
+            {
+              type: "rectangle",
+              width: 5,
+              height: 10,
+            },
+            {
+              type: "circle",
+              diameter: 4,
+            },
+          ]
+        }
+        rdr = reader do |o|
+          o.array :shapes do |a|
+            a.one_of do |shape|
+              shape.object do |sq|
+                sq.literal :type, value: "square"
+                sq.number :length
+              end
+              shape.object do |rc|
+                rc.literal :type, value: "rectangle"
+                rc.number :width
+                rc.number :height
+              end
+              shape.object do |cr|
+                cr.literal :type, value: "circle"
+                cr.number :diameter
+              end
+            end
+          end
+        end
+
+        result = rdr.read(object)
+
+        expect(result.shapes.length).to eq(3)
+        expect(result.shapes[0].type).to eq("square")
+        expect(result.shapes[0].length).to eq(10)
+        expect(result.shapes[1].width).to eq(5)
+        expect(result.shapes[2].diameter).to eq(4)
+      end
+
+    end
+
   end
 end
