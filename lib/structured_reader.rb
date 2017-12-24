@@ -64,7 +64,9 @@ module StructuredReader
           result = @object_klass.new
           @readers.each do |key, (field, reader)|
             value = fragment[field] || fragment[field.to_sym]
-            result[key] = reader.read(value, context.push(".#{field}"))
+            context.push(".#{field}") do |sub_context|
+              result[key] = reader.read(value, sub_context)
+            end
           end
           if @strict && ((excess_keys = fragment.keys.map(&:to_sym) - @readers.keys)).any?
             return context.flunk(fragment, "found strictly forbidden keys #{excess_keys.inspect}")
@@ -124,7 +126,9 @@ module StructuredReader
       def read(fragment, context)
         if fragment.kind_of?(Array)
           context.accept(fragment.map.with_index do |member, idx|
-            @member_reader.read(member, context.push("[#{idx}]"))
+            context.push("[#{idx}]") do |sub_context|
+              @member_reader.read(member, sub_context)
+            end
           end)
         else
           context.flunk(fragment, "expected an Array")
@@ -288,8 +292,8 @@ module StructuredReader
         raise WrongTypeError, "#{reason}, got a #{fragment.class} (at #{@where})"
       end
 
-      def push(path)
-        self.class.new(@where + path)
+      def push(path, &blk)
+        yield self.class.new(@where + path)
       end
 
     end
@@ -310,7 +314,7 @@ module StructuredReader
       end
 
       def push(path)
-        self.class.new(@where + path, @errors)
+        yield self.class.new(@where + path, @errors)
       end
 
     end
