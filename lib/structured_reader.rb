@@ -15,7 +15,7 @@ module StructuredReader
 
   class JSONReader
 
-    def initialize(reader_set: ReaderSet, &blk)
+    def initialize(reader_set: ReaderSet.new, &blk)
       @root_reader = reader_set.reader(:object, &blk)
     end
 
@@ -233,6 +233,18 @@ module StructuredReader
 
     end
 
+    class CustomReader
+
+      def initialize(**_, &blk)
+        @read_action = blk
+      end
+
+      def read(fragment, context)
+        @read_action.call(fragment, context)
+      end
+
+    end
+
     class OneOfReader
 
       class ReaderBuilder
@@ -357,9 +369,7 @@ module StructuredReader
 
     end
 
-    module ReaderSet
-      extend self
-
+    class ReaderSet
       READERS = {
         array: ArrayReader,
         collection: CollectionReader,
@@ -371,7 +381,16 @@ module StructuredReader
         null: NullReader,
         raw: RawReader,
         literal: LiteralReader,
+        custom: CustomReader,
       }
+
+      def initialize
+        @readers = READERS.dup
+      end
+
+      def add_reader(type, reader)
+        @readers[type.to_sym] = reader
+      end
 
       def reader(type, *args, **kwargs, &blk)
         if kwargs[:nullable]
@@ -382,12 +401,12 @@ module StructuredReader
             o.send(type, *args, **kwargs, &blk)
           end
         else
-          READERS.fetch(type).new(*args, reader_set: self, **kwargs, &blk)
+          @readers.fetch(type).new(*args, reader_set: self, **kwargs, &blk)
         end
       end
 
       def has_reader?(type)
-        READERS.has_key?(type)
+        @readers.has_key?(type)
       end
     end
 

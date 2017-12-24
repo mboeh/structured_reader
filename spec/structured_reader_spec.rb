@@ -178,6 +178,32 @@ RSpec.describe StructuredReader do
 
     end
 
+    context "reading a custom value" do
+
+      it "delegates the reading to a provided block" do
+        rdr = reader do |o|
+          o.custom :cust do |fragment, context|
+            if fragment.kind_of?(Numeric) && (1..10).member?(fragment)
+              context.accept(fragment)
+            else
+              context.flunk(fragment, "must be a number from 1 to 10")
+            end
+          end
+        end
+
+        result = rdr.read({ cust: 7 })
+        expect(result.cust).to eq(7)
+
+        expect{
+          rdr.read({ cust: 11 })
+        }.to raise_error(StructuredReader::WrongTypeError)
+        expect{
+          rdr.read({ cust: "7" })
+        }.to raise_error(StructuredReader::WrongTypeError)
+      end
+
+    end
+
     context "reading any_of" do
 
       it "raises an exception if no options are provided" do
