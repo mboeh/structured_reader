@@ -1,5 +1,7 @@
 # StructuredReader
 
+[![Build Status](https://travis-ci.org/mboeh/structured_reader.svg?branch=master)](https://travis-ci.org/mboeh/structured_reader)
+
 This library allows you to create declarative rulesets (or schemas) for reading primitive data structures (hashes + arrays + strings + numbers) or JSON into validated data objects.
 
 ## Installation
