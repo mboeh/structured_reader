@@ -30,20 +30,21 @@ module StructuredReader
 
       class ReaderBuilder
 
-        def initialize(base)
+        def initialize(base, readers:)
           @base = base
+          @readers = readers
         end
 
         def method_missing(type, name, field_name = name.to_s, *args, **kwargs, &blk)
-          if Readers.has_reader?(type)
-            @base.field name, field_name, Readers.reader(type, *args, **kwargs, &blk)
+          if @readers.has_reader?(type)
+            @base.field name, field_name, @readers.reader(type, *args, **kwargs, &blk)
           else
             super
           end
         end
 
         def respond_to_missing?(type)
-          READERS.has_reader?(type) || super
+          @readers.has_reader?(type) || super
         end
 
       end
@@ -51,7 +52,7 @@ module StructuredReader
       def initialize(strict: false)
         @readers = {}
         @strict = strict
-        yield ReaderBuilder.new(self)
+        yield ReaderBuilder.new(self, readers: Readers)
         if @readers.empty?
           raise DeclarationError, "must define at least one field to read"
         end
@@ -89,29 +90,30 @@ module StructuredReader
 
       class ReaderBuilder
 
-        def initialize(base)
+        def initialize(base, readers:)
           @base = base
+          @readers = readers
         end
 
         def method_missing(type, *args, **kwargs, &blk)
-          if Readers.has_reader?(type)
-            @base.member Readers.reader(type, *args, **kwargs, &blk)
+          if @readers.has_reader?(type)
+            @base.member @readers.reader(type, *args, **kwargs, &blk)
           else
             super
           end
         end
 
         def respond_to_missing?(type)
-          Readers.has_reader?(type) || super
+          @readers.has_reader?(type) || super
         end
 
       end
 
       def initialize(of: nil, &blk)
         if block_given?
-          yield ReaderBuilder.new(self)
+          yield ReaderBuilder.new(self, readers: Readers)
         elsif of
-          ReaderBuilder.new(self).send(of)
+          ReaderBuilder.new(self, readers: Readers).send(of)
         end
 
         unless @member_reader
@@ -235,27 +237,28 @@ module StructuredReader
 
       class ReaderBuilder
 
-        def initialize(base)
+        def initialize(base, readers:)
           @base = base
+          @readers = readers
         end
 
         def method_missing(type, *args, **kwargs, &blk)
-          if Readers.has_reader?(type)
-            @base.option Readers.reader(type, *args, **kwargs, &blk)
+          if @readers.has_reader?(type)
+            @base.option @readers.reader(type, *args, **kwargs, &blk)
           else
             super
           end
         end
 
         def respond_to_missing?(type)
-          Readers.has_reader?(type) || super
+          @readers.has_reader?(type) || super
         end
 
       end
 
       def initialize(**_)
         @readers = []
-        yield ReaderBuilder.new(self)
+        yield ReaderBuilder.new(self, readers: Readers)
         if @readers.empty?
           raise DeclarationError, "must define at least one option"
         end
