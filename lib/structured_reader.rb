@@ -15,8 +15,8 @@ module StructuredReader
 
   class JSONReader
 
-    def initialize(&blk)
-      @root_reader = ObjectReader.new(&blk)
+    def initialize(reader_set: ReaderSet, &blk)
+      @root_reader = reader_set.reader(:object, &blk)
     end
 
     def read(document, context = Context.new)
@@ -30,29 +30,29 @@ module StructuredReader
 
       class ReaderBuilder
 
-        def initialize(base, readers:)
+        def initialize(base, reader_set:)
           @base = base
-          @readers = readers
+          @reader_set = reader_set
         end
 
         def method_missing(type, name, field_name = name.to_s, *args, **kwargs, &blk)
-          if @readers.has_reader?(type)
-            @base.field name, field_name, @readers.reader(type, *args, **kwargs, &blk)
+          if @reader_set.has_reader?(type)
+            @base.field name, field_name, @reader_set.reader(type, *args, **kwargs, &blk)
           else
             super
           end
         end
 
         def respond_to_missing?(type)
-          @readers.has_reader?(type) || super
+          @reader_set.has_reader?(type) || super
         end
 
       end
 
-      def initialize(strict: false)
+      def initialize(strict: false, reader_set:)
         @readers = {}
         @strict = strict
-        yield ReaderBuilder.new(self, readers: Readers)
+        yield ReaderBuilder.new(self, reader_set: reader_set)
         if @readers.empty?
           raise DeclarationError, "must define at least one field to read"
         end
@@ -90,30 +90,30 @@ module StructuredReader
 
       class ReaderBuilder
 
-        def initialize(base, readers:)
+        def initialize(base, reader_set:)
           @base = base
-          @readers = readers
+          @reader_set = reader_set
         end
 
         def method_missing(type, *args, **kwargs, &blk)
-          if @readers.has_reader?(type)
-            @base.member @readers.reader(type, *args, **kwargs, &blk)
+          if @reader_set.has_reader?(type)
+            @base.member @reader_set.reader(type, *args, **kwargs, &blk)
           else
             super
           end
         end
 
         def respond_to_missing?(type)
-          @readers.has_reader?(type) || super
+          @reader_set.has_reader?(type) || super
         end
 
       end
 
-      def initialize(of: nil, &blk)
+      def initialize(of: nil, reader_set:, &blk)
         if block_given?
-          yield ReaderBuilder.new(self, readers: Readers)
+          yield ReaderBuilder.new(self, reader_set: reader_set)
         elsif of
-          ReaderBuilder.new(self, readers: Readers).send(of)
+          ReaderBuilder.new(self, reader_set: reader_set).send(of)
         end
 
         unless @member_reader
@@ -199,7 +199,7 @@ module StructuredReader
 
     class LiteralReader
 
-      def initialize(value:)
+      def initialize(value:, **_)
         @value = value
       end
 
@@ -237,28 +237,28 @@ module StructuredReader
 
       class ReaderBuilder
 
-        def initialize(base, readers:)
+        def initialize(base, reader_set:)
           @base = base
-          @readers = readers
+          @reader_set = reader_set
         end
 
         def method_missing(type, *args, **kwargs, &blk)
-          if @readers.has_reader?(type)
-            @base.option @readers.reader(type, *args, **kwargs, &blk)
+          if @reader_set.has_reader?(type)
+            @base.option @reader_set.reader(type, *args, **kwargs, &blk)
           else
             super
           end
         end
 
         def respond_to_missing?(type)
-          @readers.has_reader?(type) || super
+          @reader_set.has_reader?(type) || super
         end
 
       end
 
-      def initialize(**_)
+      def initialize(reader_set:, **_)
         @readers = []
-        yield ReaderBuilder.new(self, readers: Readers)
+        yield ReaderBuilder.new(self, reader_set: reader_set)
         if @readers.empty?
           raise DeclarationError, "must define at least one option"
         end
@@ -357,7 +357,7 @@ module StructuredReader
 
     end
 
-    module Readers
+    module ReaderSet
       extend self
 
       READERS = {
@@ -377,12 +377,12 @@ module StructuredReader
         if kwargs[:nullable]
           kwargs = kwargs.dup
           kwargs.delete :nullable
-          OneOfReader.new do |o|
+          OneOfReader.new(reader_set: self) do |o|
             o.null
             o.send(type, *args, **kwargs, &blk)
           end
         else
-          READERS.fetch(type).new(*args, **kwargs, &blk)
+          READERS.fetch(type).new(*args, reader_set: self, **kwargs, &blk)
         end
       end
 
