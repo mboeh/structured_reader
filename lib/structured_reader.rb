@@ -48,8 +48,9 @@ module StructuredReader
 
       end
 
-      def initialize(**_)
+      def initialize(strict: false)
         @readers = {}
+        @strict = strict
         yield ReaderBuilder.new(self)
         if @readers.empty?
           raise DeclarationError, "must define at least one field to read"
@@ -65,6 +66,9 @@ module StructuredReader
             value = fragment[field] || fragment[field.to_sym]
             result[key] = reader.read(value, context.push(".#{field}"))
           end
+          if @strict && ((excess_keys = fragment.keys.map(&:to_sym) - @readers.keys)).any?
+            return context.flunk(fragment, "found strictly forbidden keys #{excess_keys.inspect}")
+          end
           result.freeze
 
           context.accept(result)
@@ -74,7 +78,7 @@ module StructuredReader
       end
 
       def field(key, field_name, reader)
-        @readers[key] = [field_name, reader]
+        @readers[key.to_sym] = [field_name, reader]
       end
 
     end

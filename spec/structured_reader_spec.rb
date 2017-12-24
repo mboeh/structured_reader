@@ -98,6 +98,22 @@ RSpec.describe StructuredReader do
         expect(result.obj.foo).to eq("bar")
       end
 
+      it "can enforce a strict set of fields" do
+        rdr = reader do |o|
+          o.object :obj, strict: true do |obj|
+            obj.string :foo
+          end
+        end
+
+        result = rdr.read({obj: {foo: "bar"}})
+
+        expect(result.obj.foo).to eq("bar")
+
+        expect{
+          rdr.read({obj: {foo: "bar", baz: "bat"}})
+        }.to raise_error(StructuredReader::WrongTypeError)
+      end
+
     end
 
     context "reading an array" do
