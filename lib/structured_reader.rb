@@ -319,6 +319,41 @@ module StructuredReader
 
     end
 
+    class SelectionContext
+
+      def initialize(target, where = "", found = [])
+        @target = target
+        @where = where
+        @found = found
+      end
+
+      def accept(fragment)
+        if File.fnmatch(@target, @where)
+          @found << fragment
+          fragment
+        else
+          if @found.any?
+            @found.first
+          else
+            unless @where.empty?
+              fragment
+            end
+          end
+        end
+      end
+
+      def flunk(fragment, reason)
+        nil
+      end
+
+      def push(path)
+        if @found.empty?
+          yield self.class.new(@target, @where + path, @found)
+        end
+      end
+
+    end
+
     module Readers
       extend self
 
