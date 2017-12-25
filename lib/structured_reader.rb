@@ -19,8 +19,8 @@ module StructuredReader
 
   class JSONReader
 
-    def initialize(reader_set: ReaderSet.new, &blk)
-      @root_reader = reader_set.reader(:object, &blk)
+    def initialize(root: :object, reader_set: ReaderSet.new, &blk)
+      @root_reader = reader_set.reader(root, &blk)
     end
 
     def read(document, context = Context.new)
