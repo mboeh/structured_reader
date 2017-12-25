@@ -1,6 +1,6 @@
 # StructuredReader
 
-[![Build Status](https://travis-ci.org/mboeh/structured_reader.svg?branch=master)](https://travis-ci.org/mboeh/structured_reader)
+[![Build Status](https://travis-ci.org/mboeh/structured_reader.svg?branch=master)](https://travis-ci.org/mboeh/structured_reader) [![Gem Version](https://badge.fury.io/rb/structured_reader.svg)](https://badge.fury.io/rb/structured_reader)
 
 This library allows you to create declarative rulesets (or schemas) for reading primitive data structures (hashes + arrays + strings + numbers) or JSON into validated data objects. Free yourself from `json.fetch(:widget).fetch(:box).fetch(:dimensions).fetch(:width)`. Get that good `widget.box.dimensions.width` without risking NoMethodErrors. Have confidence that if you're passed total unexpected nonsense, it won't be smoothed over by a convenient MagicHashyMash.
 
