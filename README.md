@@ -91,6 +91,34 @@ p result.widgets[1].last_updated_at # ==> #<DateTime: 2017-12-24T01:05:00-08:00 
 p result.widgets[1].comment # ! ==> NoMethodError
 ```
 
+## Validation
+
+Readers validate input to ensure it is of the expected type:
+
+```ruby
+reader = StructuredReader.json do |o|
+  o.object :point do |pt|
+    pt.number :x
+    pt.number :y
+  end
+end
+
+reader.read({}) # ! ==> StructuredReader::WrongTypeError: expected a Hash, got a NilClass (at .point)
+reader.read({point: {} }) # ! ==> StructuredReader::WrongTypeError: expected a Numeric, got a NilClass (at .point.x)
+reader.read({point: { x: 1, y: "f" } }) # ! ==> StructuredReader::WrongTypeError: expected a Numeric, got a String (at .point.y)
+```
+
+A full validation mode is also available, which avoids exceptions:
+
+```ruby
+r = reader.validate({point: { x: nil, y: "f" } })
+p r.ok? # ==> false
+p r.errors # ==> [[".point.x", "expected a Numeric"], [".point.y", "expected a Numeric"]
+
+r2 = reader.validate({point: { x: 5, y: 10 }})
+p r2.object.point.x # ==> 5
+```
+
 ## Reader Types
 
 * `string`: The classic.
