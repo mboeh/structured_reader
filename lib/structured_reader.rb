@@ -27,7 +27,13 @@ module StructuredReader
       if document.kind_of?(String)
         document = JSON.parse document
       end
-      @root_reader.read(document, context)
+      context.open do
+        @root_reader.read(document, context)
+      end
+    end
+
+    def validate(document)
+      read(document, ValidatorContext.new)
     end
 
     class ObjectReader
@@ -283,8 +289,11 @@ module StructuredReader
 
       def read(fragment, context)
         @readers.each do |reader|
-          if reader.read(fragment, ValidatorContext.new).empty?
-            return context.accept(reader.read(fragment, context))
+          result = ValidatorContext.new.open do |context|
+            reader.read(fragment, context)
+          end
+          if result.ok?
+            return context.accept(result.object)
           end
         end
 
@@ -320,6 +329,10 @@ module StructuredReader
         fragment
       end
 
+      def open(&blk)
+        blk.call(self)
+      end
+
       def flunk(fragment, reason)
         raise WrongTypeError, "#{reason}, got a #{fragment.class} (at #{@where})"
       end
@@ -331,14 +344,24 @@ module StructuredReader
     end
 
     class ValidatorContext
+      Result = Struct.new(:object, :errors) do
+        def ok?
+          errors.empty?
+        end
+      end
 
       def initialize(where = "", errors = [])
         @where = where.dup.freeze
         @errors = errors
       end
 
+      def open(&blk)
+        result = blk.call(self)
+        Result.new(@errors.any? ? nil : result, @errors)
+      end
+
       def accept(fragment)
-        @errors
+        fragment
       end
 
       def flunk(fragment, reason)

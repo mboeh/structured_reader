@@ -345,8 +345,45 @@ RSpec.describe StructuredReader do
         expect(result.dims.weight).to eq(20)
       end
 
+    end
+
+    context ".validate" do
+
+      it "returns a result object" do
+        rdr = reader do |o|
+          o.string :first_name
+          o.string :last_name
+        end
+
+        result = rdr.validate({
+          first_name: "Stanley",
+          last_name: "Burrell"
+        })
+
+        expect(result.errors).to be_empty
+        expect(result.object.first_name).to eq("Stanley")
+        expect(result).to be_ok
+      end
+
+      it "returns a full list of errors" do
+        rdr = reader do |o|
+          o.string :first_name
+          o.string :last_name
+        end
+
+        result = rdr.validate({
+        })
+
+        expect(result.object).to be_nil
+        expect(result).not_to be_ok
+        expect(result.errors).to eq([
+          [".first_name", "expected a String"],
+          [".last_name", "expected a String"]
+        ])
+      end
 
     end
 
   end
+
 end
