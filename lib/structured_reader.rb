@@ -9,8 +9,8 @@ module StructuredReader
   WrongTypeError = Class.new(Error)
   DeclarationError = Class.new(Error)
 
-  def self.json(*args, &blk)
-    JSONReader.new(*args, &blk)
+  def self.json(**kwargs, &blk)
+    JSONReader.new(**kwargs, &blk)
   end
 
   def self.reader_set(&blk)

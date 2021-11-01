@@ -7,8 +7,8 @@ RSpec.describe StructuredReader do
 
   context ".json" do
 
-    def reader(*args, &blk)
-      StructuredReader.json(*args, &blk)
+    def reader(**args, &blk)
+      StructuredReader.json(**args, &blk)
     end
 
     it "raises an exception if the declaration is empty" do
